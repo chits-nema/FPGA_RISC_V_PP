@@ -14,14 +14,24 @@
 `include "reg_file.v"
 module rv_pl(
     input clk,
-    input rst_n
+    input rst_n,
+
+    //Ibram Interface
+    output [31:0] F_pc,
+    input [31:0] F_instr,
+
+    //Memory stage for DMEM Interface
+    output [31:0] M_ALUResult,
+    output M_MemWrite,
+    output [31:0] M_WriteData,
+    input [31:0] M_ReadDataW
 );
 
 //----------------------------------------------------FETCH-------------------------------------
 wire [31:0] F_pc_next;
 wire [31:0] F_pc;
 wire [31:0] F_pc_plus_4;
-wire [31:0] F_instr;
+//wire [31:0] F_instr;
 wire stallF;
 
 //-----------------------------------------------------DECODE------------------------------------
@@ -78,7 +88,7 @@ wire [31:0] M_ALUResult;
 wire [31:0] M_WriteData;
 wire [4:0] M_Rd;
 wire [31:0] M_pc_plus_4;
-wire [31:0] M_ReadDataW;
+//wire [31:0] M_ReadDataW;
 
 //-----------------------------------------------------------WRITEBACK----------------------------------------------------
 wire W_RegWrite;
@@ -113,10 +123,11 @@ adder pc_add(
 assign F_pc_next = (E_PCSrc === 1'b1) ? E_pcTarget : F_pc_plus_4;
 
 // Instruction Memory
-imem #(64) IMEM(
+/*imem #(64) IMEM(
     .a(F_pc),
     .rd(F_instr)
 );
+*/
 
 //=============================================== IF/ID Pipeline Register (PLR1) ===============================================
 if_id_reg PLR1(
@@ -298,13 +309,14 @@ execute_memory_reg PLR3(
 
 //=============================================== MEMORY STAGE ===============================================
 // Data Memory
-dmem DMEM(
+/*dmem DMEM(
     .clk(clk),
     .we(M_MemWrite),
     .a(M_ALUResult),
     .wd(M_WriteData),
     .rd(M_ReadDataW)
 );
+*/
 
 //=============================================== MA/WB Pipeline Register (PLR4) ===============================================
 memory_writeback_reg PLR4(
