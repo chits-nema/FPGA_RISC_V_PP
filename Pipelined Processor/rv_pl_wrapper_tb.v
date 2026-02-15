@@ -143,24 +143,6 @@ module rv_pl_wrapper_tb;
         end
     endtask
     
-    task load_program_from_file;
-        input [200*8:1] filename;
-        begin
-            $display("[INFO] Loading program from: %s", filename);
-            $readmemh(filename, IMEM);
-            $display("[INFO] Program loaded successfully");
-        end
-    endtask
-    
-    task load_data_from_file;
-        input [200*8:1] filename;
-        begin
-            $display("[INFO] Loading data memory from: %s", filename);
-            $readmemh(filename, DMEM);
-            $display("[INFO] Data memory loaded successfully");
-        end
-    endtask
-    
     task clear_memories;
         integer i;
         begin
@@ -168,6 +150,92 @@ module rv_pl_wrapper_tb;
                 IMEM[i] = 32'h0;
                 DMEM[i] = 32'h0;
             end
+        end
+    endtask
+    
+    // ========================================================================
+    // Hardcoded Test Programs
+    // ========================================================================
+    
+    task load_arithmetic_program;
+        begin
+            $display("[INFO] Loading arithmetic test program");
+            // From test_arithmetic.hex
+            IMEM[0] = 32'h00500093;  // addi x1, x0, 5
+            IMEM[1] = 32'h00A00113;  // addi x2, x0, 10
+            IMEM[2] = 32'h002081B3;  // add x3, x1, x2
+            IMEM[3] = 32'h40110233;  // sub x4, x2, x1
+        end
+    endtask
+    
+    task load_forwarding_program;
+        begin
+            $display("[INFO] Loading forwarding test program");
+            // From test_forwarding.hex
+            IMEM[0] = 32'h00500093;  // addi x1, x0, 5
+            IMEM[1] = 32'h00108113;  // addi x2, x1, 1
+            IMEM[2] = 32'h00110193;  // addi x3, x2, 1
+        end
+    endtask
+    
+    task load_load_use_program;
+        begin
+            $display("[INFO] Loading load-use hazard test program");
+            // From test_load_data.hex
+            DMEM[0] = 32'hDEADBEEF;
+            // From test_load_use.hex
+            IMEM[0] = 32'h00002083;  // lw x1, 0(x0)
+            IMEM[1] = 32'h00108113;  // addi x2, x1, 1
+            IMEM[2] = 32'h00000013;  // nop
+        end
+    endtask
+    
+    task load_memory_program;
+        begin
+            $display("[INFO] Loading memory test program");
+            // From test_memory.hex
+            IMEM[0] = 32'h01234537;  // lui x10, 0x1234
+            IMEM[1] = 32'h00A02023;  // sw x10, 0(x0)
+            IMEM[2] = 32'h00002583;  // lw x11, 0(x0)
+        end
+    endtask
+    
+    task load_branch_program;
+        begin
+            $display("[INFO] Loading branch test program");
+            // From test_branch.hex
+            IMEM[0] = 32'h00500093;  // addi x1, x0, 5
+            IMEM[1] = 32'h00500113;  // addi x2, x0, 5
+            IMEM[2] = 32'h00208663;  // beq x1, x2, 12
+            IMEM[3] = 32'h00100193;  // addi x3, x0, 1
+            IMEM[4] = 32'h00200213;  // addi x4, x0, 2
+            IMEM[5] = 32'h00300293;  // addi x5, x0, 3
+        end
+    endtask
+    
+    task load_jal_program;
+        begin
+            $display("[INFO] Loading JAL test program");
+            // From test_jal.hex
+            IMEM[0] = 32'h00C000EF;  // jal x1, 12
+            IMEM[1] = 32'h00100113;  // addi x2, x0, 1
+            IMEM[2] = 32'h00000013;  // nop
+            IMEM[3] = 32'h00300193;  // addi x3, x0, 3
+        end
+    endtask
+    
+    task load_complex_program;
+        begin
+            $display("[INFO] Loading complex test program");
+            // From test_complex_data.hex
+            DMEM[0] = 32'h00000064;  // 100 decimal
+            DMEM[1] = 32'h000000C8;  // 200 decimal
+            // From test_complex.hex
+            IMEM[0] = 32'h00002083;  // lw x1, 0(x0)
+            IMEM[1] = 32'h00108093;  // addi x1, x1, 1
+            IMEM[2] = 32'h00402103;  // lw x2, 4(x0)
+            IMEM[3] = 32'h002081B3;  // add x3, x1, x2
+            IMEM[4] = 32'h00302223;  // sw x3, 4(x0)
         end
     endtask
     
@@ -234,9 +302,10 @@ module rv_pl_wrapper_tb;
         // ====================================================================
         // TEST 2: Simple Arithmetic Instructions
         // ====================================================================
-        display_test("Simple Arithmetic (test_arithmetic.hex)");
+        display_test("Simple Arithmetic (Hardcoded)");
         
-        load_program_from_file("test_programs/test_arithmetic.hex");
+        clear_memories();
+        load_arithmetic_program();
         reset_processor();
         
         wait_cycles(10);
@@ -249,9 +318,10 @@ module rv_pl_wrapper_tb;
         // ====================================================================
         // TEST 3: Data Forwarding Test
         // ====================================================================
-        display_test("Data Forwarding (test_forwarding.hex)");
+        display_test("Data Forwarding (Hardcoded)");
         
-        load_program_from_file("test_programs/test_forwarding.hex");
+        clear_memories();
+        load_forwarding_program();
         reset_processor();
         
         wait_cycles(10);
@@ -263,10 +333,10 @@ module rv_pl_wrapper_tb;
         // ====================================================================
         // TEST 4: Load-Use Hazard
         // ====================================================================
-        display_test("Load-Use Hazard (test_load_use.hex)");
+        display_test("Load-Use Hazard (Hardcoded)");
         
-        load_data_from_file("test_programs/test_load_data.hex");
-        load_program_from_file("test_programs/test_load_use.hex");
+        clear_memories();
+        load_load_use_program();
         reset_processor();
         
         wait_cycles(15);
@@ -277,64 +347,72 @@ module rv_pl_wrapper_tb;
         // ====================================================================
         // TEST 5: Memory Operations
         // ====================================================================
-        display_test("Store and Load (test_memory.hex)");
+        display_test("Store and Load (Hardcoded)");
         
-        load_program_from_file("test_programs/test_memory.hex");
+        clear_memories();
+        load_memory_program();
         reset_processor();
         
         wait_cycles(12);
         
+        check_register(10, 32'h01234000, "x10 = 0x01234000 (lui)");
         check_memory(32'h0, 32'h01234000, "Memory[0] stored correctly");
         check_register(11, 32'h01234000, "x11 loaded from memory");
         
         // ====================================================================
         // TEST 6: Branch Instructions
         // ====================================================================
-        display_test("Branch Equal (test_branch.hex)");
+        display_test("Branch Equal (Hardcoded)");
         
-        load_program_from_file("test_programs/test_branch.hex");
+        clear_memories();
+        load_branch_program();
         reset_processor();
         
         wait_cycles(12);
         
         check_register(1, 32'd5, "x1 = 5");
         check_register(2, 32'd5, "x2 = 5");
+        check_register(3, 32'd7, "x3 = 7 (instruction skipped, retains old value)");
+        check_register(4, 32'd5, "x4 = 5 (instruction skipped, retains old value)");
         check_register(5, 32'd3, "x5 = 3 (branch target executed)");
         
         // ====================================================================
         // TEST 7: JAL
         // ====================================================================
-        display_test("Jump and Link (test_jal.hex)");
+        display_test("Jump and Link (Hardcoded)");
         
-        load_program_from_file("test_programs/test_jal.hex");
+        clear_memories();
+        load_jal_program();
         reset_processor();
         
         wait_cycles(10);
         
-        check_register(1, 32'h4, "x1 = 4 (return address)");
-        check_register(3, 32'h3, "x3 = 3 (after jump)");
+        check_register(1, 32'h4, "x1 = 4 (return address PC+4)");
+        check_register(2, 32'd5, "x2 = 5 (instruction skipped, retains old value)");
+        check_register(3, 32'd3, "x3 = 3 (after jump target)");
         
         // ====================================================================
         // TEST 8: Complex Program
         // ====================================================================
-        display_test("Complex Program (test_complex.hex)");
+        display_test("Complex Program (Hardcoded)");
         
-        load_data_from_file("test_programs/test_complex_data.hex");
-        load_program_from_file("test_programs/test_complex.hex");
+        clear_memories();
+        load_complex_program();
         reset_processor();
         
         wait_cycles(20);
         
-        check_register(1, 32'd101, "x1 = 101");
+        check_register(1, 32'd101, "x1 = 101 (100 + 1)");
         check_register(2, 32'd200, "x2 = 200");
-        check_register(3, 32'd301, "x3 = 301");
-        check_memory(32'h4, 32'd301, "Memory[4] = 301");
+        check_register(3, 32'd301, "x3 = 301 (101 + 200)");
+        check_memory(32'h4, 32'd301, "Memory[1 (addr 4)] = 301");
         
         // ====================================================================
         // Pipeline State Visualization
         // ====================================================================
         display_test("Pipeline State Visualization");
-        load_program_from_file("test_programs/test_arithmetic.hex");
+        clear_memories();
+        load_arithmetic_program();
         reset_processor();
         
         $display("\n--- Monitoring first 8 cycles ---");
