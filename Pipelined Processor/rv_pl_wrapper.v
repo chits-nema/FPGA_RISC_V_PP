@@ -40,7 +40,6 @@ assign imem_addr = F_pc;
 assign dmem_addr = M_ALUResult;
 assign dmem_we = M_MemWrite;
 assign dmem_din = M_WriteData;
-assign M_ReadDataW = dmem_dout;
 
 //Signal done flag when program writes DEADBEEF into 0x2000
 always @(posedge clk or negedge rst) begin
