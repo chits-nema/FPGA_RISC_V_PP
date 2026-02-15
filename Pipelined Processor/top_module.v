@@ -29,7 +29,7 @@ module rv_pl(
 
 //----------------------------------------------------FETCH-------------------------------------
 wire [31:0] F_pc_next;
-wire [31:0] F_pc;
+//wire [31:0] F_pc;
 wire [31:0] F_pc_plus_4;
 //wire [31:0] F_instr;
 wire stallF;
@@ -83,9 +83,9 @@ wire E_flush;
 //---------------------------------------------------------MEMORY----------------------------------------------
 wire M_RegWrite;
 wire [1:0] M_ResultSrc;
-wire M_MemWrite;
-wire [31:0] M_ALUResult;
-wire [31:0] M_WriteData;
+//wire M_MemWrite;
+//wire [31:0] M_ALUResult;
+//wire [31:0] M_WriteData;
 wire [4:0] M_Rd;
 wire [31:0] M_pc_plus_4;
 //wire [31:0] M_ReadDataW;
