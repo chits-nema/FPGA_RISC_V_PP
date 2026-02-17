@@ -1,20 +1,11 @@
 # RISC-V Bubble Sort for 32 Signed Integers
-# Sorts 32 integers in place using only R, I, branch, jal, and lui instructions
-# Array starts at address 0x40 in data memory
-
-.data
-    .align 2
-    # Sample array of 32 signed integers (you can modify these values)
-    array: .word 15, -3, 7, 22, -8, 1, 19, -12, 4, 11, -5, 8, 16, -1, 3, 25
-           .word -9, 6, 13, -7, 2, 18, -4, 9, 14, -2, 5, 20, -6, 235, 17, -10
-
 .text
 .globl _start
 
 _start:
     # Load base address of array into a0
-    lui a0, 0x0          # Upper 20 bits
-    addi a0, a0, 0x40    # a0 = base address (0x40)
+    lui a0, 0x1          # a0 = 0x1000 (data RAM base)
+    addi a0, a0, 0x40    # a0 = 0x1040 (array start) This offset is common for stack space, global variables, etc.
     
     # Initialize outer loop counter: n-1 = 31 passes
     addi t0, zero, 31    # t0 = outer loop counter (31 passes)
@@ -58,22 +49,11 @@ outer_continue:
     jal zero, outer_loop # Jump back to outer loop
     
 done:
-    # Sorting complete - infinite loop or exit
-    jal zero, done       # Loop here (or add your exit code)
-
-
-# Notes:
-# - Array base address: 0x40
-# - Array size: 32 signed integers (128 bytes total)
-# - Uses bubble sort algorithm with optimization (n-1 passes)
-# - Only uses: R-type (slt, add, sub, etc.), I-type (addi, lw, sw, etc.), 
-#   branch (beq), jal, and lui instructions
-#
-# Register usage:
-# a0: Base address of array (0x40)
-# a1: Current position pointer in array
-# t0: Outer loop counter (number of passes remaining)
-# t1: Inner loop counter (comparisons in current pass)
-# t2: First element in comparison (array[i])
-# t3: Second element in comparison (array[i+1])
-# t4: Comparison result
+    # Write status flag with the MAGIC NUMBER at 0x2000
+    lui a2, 0x2              # a2 = 0x2000
+    lui a3, 0xDEADF          # a3 = 0xDEADF000
+    addi a3, a3, -273        # a3 = 0xDEADBEEF
+    sw a3, 0(a2)             # Write DEADBEEF to 0x2000
+    
+    # Infinite loop
+    jal zero, done
