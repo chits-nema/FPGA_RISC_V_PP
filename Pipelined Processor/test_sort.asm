@@ -2,10 +2,19 @@
 .text
 .globl _start
 
+/*
+Application Binary Interface names:
+a0-a7   = x10-x17  (function arguments/return values)
+t0-t6   = x5-x7, x28-x31  (temporary registers)
+s0-s11  = x8-x9, x18-x27  (saved registers)
+ra      = x1  (return address)
+sp      = x2  (stack pointer)
+*/
+
 _start:
     # Load base address of array into a0
     lui a0, 0x1          # a0 = 0x1000 (data RAM base)
-    addi a0, a0, 0x40    # a0 = 0x1040 (array start) This offset is common for stack space, global variables, etc.
+    addi a0, a0, 0x40    # a0 = 0x1040 (array start)
     
     # Initialize outer loop counter: n-1 = 31 passes
     addi t0, zero, 31    # t0 = outer loop counter (31 passes)

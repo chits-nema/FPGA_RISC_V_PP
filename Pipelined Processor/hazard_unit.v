@@ -36,6 +36,8 @@ module hazard(
 );
 
     wire lwstall, branchStall;
+    reg lw_stall_r; //second stall cycle
+    reg pcsrc_r; // remembers previous PcSrcE to detect rising edge
 
     //---------------------forwarding logic for data hazard----------------------------------
     //forward from Memory stage
@@ -61,18 +63,43 @@ module hazard(
     end
 
     //Data Hazards using stalls for load word instr
-    assign lwstall = ResultSrcE & ((Rs1D == RdE)|(Rs2D==RdE));
+    // Don't trigger on writes to x0 (RdE == 0) - avoid spurious stalls
+    assign lwstall = ResultSrcE & (RdE != 5'b0) & ((Rs1D == RdE) | (Rs2D == RdE));
+    
+    //register to extend stall for second cycle
+    
+    always @(posedge clk) begin
+    if (!reset)
+        lw_stall_r <= 1'b0;
+    else
+        lw_stall_r <= lwstall;  // delay stall by one cycle
+    end
 
-    //stall control logic
+    // track previous PcSrcE to make branch flush a one-shot event
+    always @(posedge clk) begin
+        if (!reset)
+            pcsrc_r <= 1'b0;
+        else
+            pcsrc_r <= PcSrcE;
+    end
+    
+    //stall control logic. now covers 2 cycles
     always @(*) begin
-        stallF = lwstall;
-        stallD = lwstall;
+        // one-cycle stall when branch is first detected to let PC update
+        // and avoid re-fetching the same branch instruction
+        reg pcsrc_stall;
+        pcsrc_stall = PcSrcE & ~pcsrc_r;
 
-        //flush is stall or branch taken
-        FlushE = lwstall || PcSrcE;
+        stallF = lwstall | lw_stall_r | pcsrc_stall;
+        stallD = lwstall | lw_stall_r | pcsrc_stall;
 
+        //flush on load-use in first cycle only. Do NOT flush ID->EX for branch
+        // (branch should clear IF/ID only) so instructions in Decode that
+        // must proceed into Execute (e.g. stores/loads) are not accidentally
+        // cleared on the same clock edge.
+        FlushE = lwstall;
 
-        //flash if branch taken
+        //flush IF/ID when branch taken (clear next fetch)
         FlushD = PcSrcE;
     end
 

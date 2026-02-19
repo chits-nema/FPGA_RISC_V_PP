@@ -1,17 +1,3 @@
-`include "alu.v"
-`include "controller.v"
-`include "data_mem.v"
-`include "EX_MA.v"
-`include "extend_unit.v"
-`include "generic_building_blocks.v"
-`include "hazard_unit.v"
-`include "ID_EX.v"
-`include "IF_ID.v"
-`include "instruction_mem.v"
-`include "MA_WB.v"
-`include "multiplexer.v"
-`include "program_counter.v"
-`include "reg_file.v"
 module rv_pl(
     input clk,
     input rst_n,
@@ -89,7 +75,6 @@ wire [1:0] M_ResultSrc;
 wire [4:0] M_Rd;
 wire [31:0] M_pc_plus_4;
 //wire [31:0] M_ReadDataW;
-
 //-----------------------------------------------------------WRITEBACK----------------------------------------------------
 wire W_RegWrite;
 wire [1:0] W_ResultSrc;

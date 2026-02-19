@@ -45,7 +45,7 @@ module decode_execute_reg(
 );
 
 always @(posedge clk) begin
-        if (!rst_n || FlushE) begin
+    if (!rst_n || FlushE) begin
             // Reset or flush: clear control signals (insert bubble)
             RegWriteE <= 1'b0;
             ResultSrcE <= 2'b00;
@@ -64,6 +64,7 @@ always @(posedge clk) begin
             RdE <= 5'b0;
             ImmExtE <= 32'b0;
             PCPlus4E <= 32'b0;
+            
         end
         else begin
             // Normal operation: latch new values from decode stage
@@ -84,6 +85,8 @@ always @(posedge clk) begin
             ALUControlE <= ALUControlD;
             ALUSrcE <= ALUSrcD;
             ALUSrcASelE <= ALUSrcASelD;
+
+            
         end
     end
 
