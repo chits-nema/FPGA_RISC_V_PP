@@ -35,9 +35,8 @@ module hazard(
     input clk, reset
 );
 
-    wire lwstall, branchStall;
+    wire lwstall;
     reg lw_stall_r; //second stall cycle
-    reg pcsrc_r; // remembers previous PcSrcE to detect rising edge
 
     //---------------------forwarding logic for data hazard----------------------------------
     //forward from Memory stage
@@ -75,27 +74,15 @@ module hazard(
         lw_stall_r <= lwstall;  // delay stall by one cycle
     end
 
-    // track previous PcSrcE to make branch flush a one-shot event
-    always @(posedge clk) begin
-        if (!reset)
-            pcsrc_r <= 1'b0;
-        else
-            pcsrc_r <= PcSrcE;
-    end
-    
-    //stall control logic. now covers 2 cycles
+ 
+    //stall control logic. now covers 2 cycles for load use
     always @(*) begin
-        // one-cycle stall when branch is first detected to let PC update
-        // and avoid re-fetching the same branch instruction. Use inline
-        // expression for synthesizability (no local declarations allowed).
-        stallF = lwstall | lw_stall_r | (PcSrcE & ~pcsrc_r);
-        stallD = lwstall | lw_stall_r | (PcSrcE & ~pcsrc_r);
+        stallF = lwstall | lw_stall_r;
+        stallD = lwstall | lw_stall_r;
 
-        //flush on load-use in first cycle only. Do NOT flush ID->EX for branch
-        // (branch should clear IF/ID only) so instructions in Decode that
-        // must proceed into Execute (e.g. stores/loads) are not accidentally
-        // cleared on the same clock edge.
-        FlushE = lwstall;
+        // Flush ID/EX on either load-use hazard (insert bubble) or taken branch
+        // (squash the wrong-path instruction currently in Decode).
+        FlushE = lwstall | PcSrcE;
 
         //flush IF/ID when branch taken (clear next fetch)
         FlushD = PcSrcE;
