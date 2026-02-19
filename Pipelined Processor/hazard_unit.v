@@ -86,12 +86,10 @@ module hazard(
     //stall control logic. now covers 2 cycles
     always @(*) begin
         // one-cycle stall when branch is first detected to let PC update
-        // and avoid re-fetching the same branch instruction
-        reg pcsrc_stall;
-        pcsrc_stall = PcSrcE & ~pcsrc_r;
-
-        stallF = lwstall | lw_stall_r | pcsrc_stall;
-        stallD = lwstall | lw_stall_r | pcsrc_stall;
+        // and avoid re-fetching the same branch instruction. Use inline
+        // expression for synthesizability (no local declarations allowed).
+        stallF = lwstall | lw_stall_r | (PcSrcE & ~pcsrc_r);
+        stallD = lwstall | lw_stall_r | (PcSrcE & ~pcsrc_r);
 
         //flush on load-use in first cycle only. Do NOT flush ID->EX for branch
         // (branch should clear IF/ID only) so instructions in Decode that
