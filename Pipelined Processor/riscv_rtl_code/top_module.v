@@ -354,6 +354,7 @@ hazard hazard_unit(
     .FlushE(E_flush),
     .ForwardAE(ForwardAE),
     .ForwardBE(ForwardBE),
+    .BranchD(D_Branch),
     .clk(clk),
     .reset(rst_n)
 );
