@@ -1,5 +1,3 @@
-//Included a delay register that remembers an extra flush cycle for BRAM latency
-
 module if_id_reg(
     input clk, rst_n,
     input en, //F_stall
@@ -11,24 +9,13 @@ module if_id_reg(
     output reg [31:0] D_instr,
     output reg [31:0] D_pc_plus_4
 );
-
-    reg clr_delay; //The extra cycle flush for BRAM
-    
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            clr_delay <= 1'b0;
-         end else begin
-            clr_delay <= clr; //remember flush from previous cycle
-         end
-    end
-    
     always @(posedge clk) begin
         if (!rst_n) begin
             //reset to NOP (addi x0, x0, 0)
             D_instr <= 32'h00000013;
             D_pc <= 32'h0;
             D_pc_plus_4 <= 32'h0;
-        end else if (clr || clr_delay) begin
+        end else if (clr) begin
             //reset to NOP (addi x0, x0, 0)
             D_instr <= 32'h00000013;
             D_pc <= 32'h0;
