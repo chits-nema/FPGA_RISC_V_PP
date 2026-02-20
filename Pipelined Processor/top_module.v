@@ -272,7 +272,7 @@ adder pc_target_add(
 execute_memory_reg PLR3(
     .clk(clk),
     .rst_n(rst_n),
-    .flush(1'b0),  // Not used for control hazards (branches/jumps) - only for exceptions
+    .flush(E_PCSrc),  // Flush EX->MEM only on taken branch/jump (use E_PCSrc)
     // Control signals
     .RegWriteE(E_RegWrite),
     .ResultSrcE(E_ResultSrc),
