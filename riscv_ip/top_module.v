@@ -5,6 +5,7 @@ module rv_pl(
     //Ibram Interface
     output [31:0] F_pc,
     input [31:0] F_instr,
+    output stallF_out,  // Export stall signal for BRAM control
 
     //Memory stage for DMEM Interface
     output [31:0] M_ALUResult,
@@ -19,6 +20,13 @@ wire [31:0] F_pc_next;
 wire [31:0] F_pc_plus_4;
 //wire [31:0] F_instr;
 wire stallF;
+
+// Registered PC for BRAM alignment (PC lags 1 cycle behind due to synchronous reads)
+reg [31:0] F_pc_r;
+wire [31:0] F_pc_r_plus_4;
+
+// 2-cycle branch flush register
+reg branch_flush_r;
 
 //-----------------------------------------------------DECODE------------------------------------
 wire [31:0] D_instr;
@@ -65,6 +73,7 @@ wire [31:0] E_pcTarget;
 wire [31:0] E_ALUResult;
 wire [1:0] E_ForwardA, E_ForwardB;
 wire E_flush;
+wire E_stall;
 
 //---------------------------------------------------------MEMORY----------------------------------------------
 wire M_RegWrite;
@@ -75,6 +84,7 @@ wire [1:0] M_ResultSrc;
 wire [4:0] M_Rd;
 wire [31:0] M_pc_plus_4;
 //wire [31:0] M_ReadDataW;
+wire M_stall;
 
 //-----------------------------------------------------------WRITEBACK----------------------------------------------------
 wire W_RegWrite;
@@ -87,6 +97,40 @@ wire [31:0] W_pc_plus_4;
 
 //Hazard control sigsnals
 wire [1:0] ForwardAE, ForwardBE;
+
+//=============================================== REGISTERED PC (F_pc_r) ===============================================
+// BRAM latches address at posedge and outputs data AFTER the edge (1-cycle latency)
+// F_pc_r is aligned with the instruction output from BRAM
+// Use F_pc_r for IF/ID register to ensure PC matches the fetched instruction
+always @(posedge clk) begin
+    if (!rst_n)
+        F_pc_r <= 32'b0;
+    else if (!stallF)
+        F_pc_r <= F_pc;  // Latch current PC when not stalled
+end
+
+// PC+4 for the registered PC
+adder pc_r_add(
+    .a(F_pc_r),
+    .b(32'd4),
+    .y(F_pc_r_plus_4)
+);
+
+//=============================================== 2-CYCLE BRANCH FLUSH ===============================================
+// After a taken branch, BRAM needs 1 extra cycle to fetch target instruction:
+// Cycle 0: PCSrc=1, PC←target, IF/ID flushed (from hazard unit D_flush)
+// Cycle 1: BRAM outputs stale instruction (from old PC), needs extra flush
+// Cycle 2: BRAM outputs correct target instruction
+always @(posedge clk) begin
+    if (!rst_n)
+        branch_flush_r <= 1'b0;
+    else
+        branch_flush_r <= E_PCSrc;  // Delay PCSrc by 1 cycle
+end
+
+// Combined flush for IF/ID register: normal hazard flush + extra BRAM cycle
+wire D_flush_combined;
+assign D_flush_combined = D_flush | branch_flush_r;
 
 // Program Counter
 pc pc_reg(
@@ -115,15 +159,46 @@ assign F_pc_next = (E_PCSrc === 1'b1) ? E_pcTarget : F_pc_plus_4;
 );
 */
 
+//=============================================== INSTRUCTION BUFFER ===============================================
+// Solution for BRAM stall alignment issue:
+// During stalls, external BRAM address register keeps latching F_pc, potentially
+// overwriting the correct instruction. On first stall cycle, capture the current
+// valid instruction from BRAM into a buffer. Use buffered value during stall.
+reg [31:0] instr_buffer;
+reg instr_buffer_valid;
+
+always @(posedge clk) begin
+    if (!rst_n) begin
+        instr_buffer_valid <= 1'b0;
+        instr_buffer <= 32'h00000013;  // NOP (addi x0, x0, 0)
+    end else if (D_flush_combined) begin
+        // Clear buffer on flush (branch taken, etc.)
+        instr_buffer_valid <= 1'b0;
+    end else if (!stallF) begin
+        // Normal operation - not stalled, clear buffer
+        instr_buffer_valid <= 1'b0;
+    end else if (stallF && !instr_buffer_valid) begin
+        // First cycle of stall - capture current instruction
+        instr_buffer <= F_instr;
+        instr_buffer_valid <= 1'b1;
+    end
+    // else: stall continues and buffer valid - keep holding buffered instruction
+end
+
+// Mux: use buffered instruction during stall if valid, otherwise direct from BRAM
+wire [31:0] F_instr_buffered;
+assign F_instr_buffered = instr_buffer_valid ? instr_buffer : F_instr;
+
 //=============================================== IF/ID Pipeline Register (PLR1) ===============================================
+// Use F_pc_r (registered PC) to align with BRAM instruction output
 if_id_reg PLR1(
     .clk(clk),
     .rst_n(rst_n),
     .en(stallF),
-    .clr(D_flush),
-    .F_pc(F_pc),
-    .F_instr(F_instr),
-    .F_pc_plus_4(F_pc_plus_4),
+    .clr(D_flush_combined),      // Use combined flush signal
+    .F_pc(F_pc_r),               // Use registered PC (aligned with BRAM output)
+    .F_instr(F_instr_buffered),  // Use buffered instruction
+    .F_pc_plus_4(F_pc_r_plus_4), // Use registered PC+4
     .D_pc(D_pc),
     .D_instr(D_instr),
     .D_pc_plus_4(D_pc_plus_4)
@@ -175,6 +250,7 @@ decode_execute_reg PLR2(
     .clk(clk),
     .rst_n(rst_n),
     .FlushE(E_flush),
+    .stallE(D_stall),          // Hold E when D is stalled
     // Control signals
     .RegWriteD(D_RegWrite),
     .ResultSrcD(D_ResultSrc),
@@ -313,23 +389,26 @@ memory_writeback_reg PLR4(
     .ResultSrcM(M_ResultSrc),
     // Data signals
     .ALUResultM(M_ALUResult),
-    .ReadDataM(M_ReadDataW),
+    .ReadDataM(32'b0),         // Not used - memory data bypasses pipeline register for BRAM timing
     .RdM(M_Rd),
     .PCPlus4M(M_pc_plus_4),
     // Outputs
     .RegWriteW(W_RegWrite),
     .ResultSrcW(W_ResultSrc),
     .ALUResultW(W_ALUResult),
-    .ReadDataW(W_ReadData),
+    .ReadDataW(),              // Not used - memory data comes directly from M_ReadDataW
     .RdW(W_Rd),
     .PCPlus4W(W_pc_plus_4)
 );
 
 //=============================================== WRITEBACK STAGE ===============================================
-// Result Mux (select between ALUResult, ReadData, or PC+4)
+// Result Mux (select between ALUResult, ReadData, or PC+4)  
+// NOTE: M_ReadDataW bypasses MA_WB register for proper BRAM timing (1-cycle registered output)
+// WARNING: This means W_Result for loads comes from M stage BRAM output. Forwarding logic
+// must prevent W→E forwarding for loads (use stall instead) to avoid pipeline hazards.
 mux3 #(32) result_mux(
     .d0(W_ALUResult),
-    .d1(W_ReadData),
+    .d1(M_ReadDataW),          // Direct from BRAM output (not pipelined through MA_WB)
     .d2(W_pc_plus_4),
     .s(W_ResultSrc),
     .y(W_Result)
@@ -341,6 +420,8 @@ hazard hazard_unit(
     .RegWriteM(M_RegWrite),
     .RegWriteW(W_RegWrite),
     .ResultSrcE(E_ResultSrc[0]),
+    .ResultSrcM(M_ResultSrc[0]),
+    .MemReadM(M_ResultSrc[0]),  // MemRead implied by ResultSrc=1 (select memory data)
     .PcSrcE(E_PCSrc),
     .Rs1E(E_Rs1),
     .Rs2E(E_Rs2),
@@ -351,6 +432,8 @@ hazard hazard_unit(
     .Rs2D(D_Rs2),
     .stallF(stallF),
     .stallD(D_stall),
+    .stallE(E_stall),
+    .stallM(M_stall),
     .FlushD(D_flush),
     .FlushE(E_flush),
     .ForwardAE(ForwardAE),
@@ -358,5 +441,8 @@ hazard hazard_unit(
     .clk(clk),
     .reset(rst_n)
 );
+
+// Export stall signal for external BRAM control
+assign stallF_out = stallF;
 
 endmodule

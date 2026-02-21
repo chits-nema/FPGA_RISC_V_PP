@@ -16,10 +16,9 @@ module if_id_reg(
             D_pc <= 32'h0;
             D_pc_plus_4 <= 32'h0;
         end else if (clr) begin
-            //reset to NOP (addi x0, x0, 0)
+            // Flush: only clear instruction to NOP, keep PC valid for hazard detection
             D_instr <= 32'h00000013;
-            D_pc <= 32'h0;
-            D_pc_plus_4 <= 32'h0;
+            // Don't clear D_pc and D_pc_plus_4 - needed for hazard logic
         end else if (en) begin
             // Stalled - keep current values
             D_instr <= D_instr;

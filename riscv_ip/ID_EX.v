@@ -2,6 +2,7 @@ module decode_execute_reg(
     input clk,
     input rst_n,            // Active-low reset
     input FlushE,           // Flush signal (clear control signals)
+    input stallE,           // Stall signal (hold current values)
     
     // Control signals from Decode
     input RegWriteD,
@@ -45,8 +46,8 @@ module decode_execute_reg(
 );
 
 always @(posedge clk) begin
-        if (!rst_n || FlushE) begin
-            // Reset or flush: clear control signals (insert bubble)
+        if (!rst_n) begin
+            // Reset: clear everything
             RegWriteE <= 1'b0;
             ResultSrcE <= 2'b00;
             MemWriteE <= 1'b0;
@@ -64,6 +65,18 @@ always @(posedge clk) begin
             RdE <= 5'b0;
             ImmExtE <= 32'b0;
             PCPlus4E <= 32'b0;
+        end
+        else if (FlushE) begin
+            // Flush: only clear control signals (data is don't-care)
+            RegWriteE <= 1'b0;
+            ResultSrcE <= 2'b00;
+            MemWriteE <= 1'b0;
+            JumpE <= 1'b0;
+            BranchE <= 1'b0;
+            ALUControlE <= 4'b0000;
+            ALUSrcE <= 1'b0;
+            ALUSrcASelE <= 1'b0;
+            // Don't clear data path - keeps PCE valid for potential hazard checks
         end
         else begin
             // Normal operation: latch new values from decode stage

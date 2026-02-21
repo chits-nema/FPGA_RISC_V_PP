@@ -1,79 +1,128 @@
 module hazard(
+    input wire clk,
+    input wire reset,
     
-    input wire RegWriteE, // Register write enable in Execute
+    // Execute stage signals
+    input wire RegWriteE,        // Register write enable in Execute
+    input wire ResultSrcE,       // ResultSrc[0] - indicates load instruction in Execute
+    input wire [4:0] Rs1E,       // Source register 1 in Execute
+    input wire [4:0] Rs2E,       // Source register 2 in Execute
+    input wire [4:0] RdE,        // Destination register in Execute
+    input wire PcSrcE,           // Branch taken signal from Execute
 
-    input wire RegWriteM, // Register write enable in Memory
+    // Memory stage signals
+    input wire RegWriteM,        // Register write enable in Memory
+    input wire ResultSrcM,       // ResultSrc[0] - indicates load instruction in Memory
+    input wire MemReadM,         // High when M stage has active load (for BRAM latency handling)
+    input wire [4:0] RdM,        // Destination register in Memory
 
-    input wire RegWriteW, // Register write enable in Writeback
+    // Writeback stage signals
+    input wire RegWriteW,        // Register write enable in Writeback
+    input wire [4:0] RdW,        // Destination register in Writeback
 
-    input wire ResultSrcE, // ResultSrc[0] - indicates load instruction
+    // Decode stage signals
+    input wire [4:0] Rs1D,       // Source register 1 in Decode
+    input wire [4:0] Rs2D,       // Source register 2 in Decode
 
-    input wire PcSrcE,  // Branch taken signal from Execute
-
-    input wire [4:0] Rs1E, // Source register 1 in Execute
-
-    input wire [4:0] Rs2E, // Source register 2 in Execute
-
-    input wire [4:0] Rs1D, //input from decode (ID) stage, source reg 1 in decode
-
-    input wire [4:0] RdE, // Destination register in Execute
-    
-    input wire [4:0] RdM, // Destination register in Memory
-    
-    input wire [4:0] RdW, // Destination register in Writeback
-
-    input wire [4:0] Rs2D, //input from decode (ID) stage, source reg 2 in Decode
-
-    output reg stallF, stallD,     // Stall control outputs F-Fetch D-Decode
-
-    output reg FlushD, FlushE,   // Flush control outputs F-Fetch D-Decode
-
+    // Forwarding control outputs
     output reg [1:0] ForwardAE,  // Forward control for ALU input A
+    output reg [1:0] ForwardBE,  // Forward control for ALU input B
 
-    output reg [1:0] ForwardBE, // Forward control for ALU input B
+    // Stall control outputs (all pipeline stages)
+    output reg stallF,           // Stall Fetch
+    output reg stallD,           // Stall Decode
+    output reg stallE,           // Stall Execute
+    output reg stallM,           // Stall Memory
 
-    input clk, reset
+    // Flush control outputs
+    output reg FlushD,           // Flush Decode
+    output reg FlushE            // Flush Execute
 );
 
-    wire lwstall, branchStall;
+    // Internal hazard detection signals
+    wire lwstall;           // Load-use hazard: load in E or M, dependent in D
 
-    //---------------------forwarding logic for data hazard----------------------------------
-    //forward from Memory stage
+    //=====================================================================================
+    // FORWARDING LOGIC
+    //=====================================================================================
+    // Forward from M or W stage to resolve data hazards
+    // Don't forward from M stage if it's a load (data not ready until W)
+
     // Forwarding logic for ALU input A (Rs1E)
-    always @(*)begin
-        if (RegWriteM & (Rs1E != 0) & (Rs1E == RdM)) begin
+    always @(*) begin
+        if (RegWriteM & (Rs1E != 0) & (Rs1E == RdM) & !ResultSrcM) begin
+            // Forward from Memory stage (non-load instructions only)
             ForwardAE = 2'b10;
-        end else if (RegWriteW & (Rs1E != 0) & (Rs1E == RdW))begin
+        end else if (RegWriteW & (Rs1E != 0) & (Rs1E == RdW)) begin
+            // Forward from Writeback stage (always safe, including loads)
             ForwardAE = 2'b01;
         end else begin
+            // No forwarding, use register file value
             ForwardAE = 2'b00;
         end
     end
 
-    //forward from Writeback stage
     // Forwarding logic for ALU input B (Rs2E)
-    always @(*)begin
-        if (RegWriteM & (Rs2E != 0) & (Rs2E == RdM)) begin
+    always @(*) begin
+        if (RegWriteM & (Rs2E != 0) & (Rs2E == RdM) & !ResultSrcM) begin
+            // Forward from Memory stage (non-load instructions only)
             ForwardBE = 2'b10;
         end else if (RegWriteW & (Rs2E != 0) & (Rs2E == RdW)) begin
+            // Forward from Writeback stage (always safe, including loads)
             ForwardBE = 2'b01;
-        end else ForwardBE = 2'b00;
+        end else begin
+            // No forwarding, use register file value
+            ForwardBE = 2'b00;
+        end
     end
 
-    //Data Hazards using stalls for load word instr
-    assign lwstall = ResultSrcE & ((Rs1D == RdE)|(Rs2D==RdE));
+    //=====================================================================================
+    // LOAD-USE HAZARD DETECTION
+    //=====================================================================================
+    
+    // Separate detection for different hazard cases
+    // Case 1: Load in E or M, dependent in D (stall F and D)
+    wire lwstall_D;
+    assign lwstall_D = (ResultSrcE & ((Rs1D == RdE) | (Rs2D == RdE))) |
+                       (ResultSrcM & ((Rs1D == RdM) | (Rs2D == RdM)));
+    
+    // Case 2: Load in M, dependent in E (stall F, D, and E)
+    // This is critical for back-to-back loads followed by dependent instruction
+    // Example: lw t2; lw t3; slt t4,t3,t2 <- when slt is in E, t3 is still loading in M!
+    wire lwstall_E;
+    assign lwstall_E = ResultSrcM & ((Rs1E == RdM) | (Rs2E == RdM));
 
-    //stall control logic
+    //=====================================================================================
+    // STALL AND FLUSH CONTROL
+    //=====================================================================================
+    
     always @(*) begin
-        stallF = lwstall;
-        stallD = lwstall;
-
-        //flush is stall or branch taken
-        FlushE = lwstall || PcSrcE;
-
-
-        //flash if branch taken
-        FlushD = PcSrcE;
+        // Default: no stalls
+        stallF = 1'b0;
+        stallD = 1'b0;
+        stallE = 1'b0;
+        stallM = 1'b0;
+        
+        // Stall for load-use hazard with dependent in D (load in E or M, dependent in D)
+        if (lwstall_D) begin
+            stallF = 1'b1;  // Hold fetch
+            stallD = 1'b1;  // Hold decode
+            stallE = 1'b0;  // Let load continue through pipeline
+            // Load proceeds E→M→W normally while dependent instruction waits in D
+        end
+        
+        // Additional stall for load-use hazard with dependent in E (load in M, dependent in E)
+        // Need to hold E stage as well until load reaches W
+        if (lwstall_E) begin
+            stallF = 1'b1;  // Hold fetch
+            stallD = 1'b1;  // Hold decode
+            stallE = 1'b1;  // CRITICAL: Also hold E stage!
+            // Everything below load stalls, load in M proceeds to W, then E can use forwarded data
+        end
+        
+        // Flush control
+        FlushE = PcSrcE;  // Flush E only on branch taken (NOT on load-use stall!)
+        FlushD = PcSrcE;  // Flush D on branch taken
     end
 
 endmodule
