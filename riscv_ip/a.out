@@ -1,0 +1,261 @@
+#! /d/a/fpga-toolchain-build/fpga-toolchain-build/iverilog/_install/bin/vvp
+:ivl_version "11.0 (stable)" "(d3b0992)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision + 0;
+:vpi_module "C:\PROGRA~3\CHOCOL~1\lib\iverilog\tools\lib\ivl\system.vpi";
+:vpi_module "C:\PROGRA~3\CHOCOL~1\lib\iverilog\tools\lib\ivl\vhdl_sys.vpi";
+:vpi_module "C:\PROGRA~3\CHOCOL~1\lib\iverilog\tools\lib\ivl\vhdl_textio.vpi";
+:vpi_module "C:\PROGRA~3\CHOCOL~1\lib\iverilog\tools\lib\ivl\v2005_math.vpi";
+:vpi_module "C:\PROGRA~3\CHOCOL~1\lib\iverilog\tools\lib\ivl\va_math.vpi";
+S_00000202a73a2d20 .scope module, "decode_execute_reg" "decode_execute_reg" 2 1;
+ .timescale 0 0;
+    .port_info 0 /INPUT 1 "clk";
+    .port_info 1 /INPUT 1 "rst_n";
+    .port_info 2 /INPUT 1 "FlushE";
+    .port_info 3 /INPUT 1 "stallE";
+    .port_info 4 /INPUT 1 "RegWriteD";
+    .port_info 5 /INPUT 2 "ResultSrcD";
+    .port_info 6 /INPUT 1 "MemWriteD";
+    .port_info 7 /INPUT 1 "JumpD";
+    .port_info 8 /INPUT 1 "BranchD";
+    .port_info 9 /INPUT 4 "ALUControlD";
+    .port_info 10 /INPUT 1 "ALUSrcD";
+    .port_info 11 /INPUT 1 "ALUSrcASelD";
+    .port_info 12 /INPUT 32 "RD1D";
+    .port_info 13 /INPUT 32 "RD2D";
+    .port_info 14 /INPUT 32 "PCD";
+    .port_info 15 /INPUT 5 "Rs1D";
+    .port_info 16 /INPUT 5 "Rs2D";
+    .port_info 17 /INPUT 5 "RdD";
+    .port_info 18 /INPUT 32 "ImmExtD";
+    .port_info 19 /INPUT 32 "PCPlus4D";
+    .port_info 20 /OUTPUT 1 "RegWriteE";
+    .port_info 21 /OUTPUT 2 "ResultSrcE";
+    .port_info 22 /OUTPUT 1 "MemWriteE";
+    .port_info 23 /OUTPUT 1 "JumpE";
+    .port_info 24 /OUTPUT 1 "BranchE";
+    .port_info 25 /OUTPUT 4 "ALUControlE";
+    .port_info 26 /OUTPUT 1 "ALUSrcE";
+    .port_info 27 /OUTPUT 1 "ALUSrcASelE";
+    .port_info 28 /OUTPUT 32 "RD1E";
+    .port_info 29 /OUTPUT 32 "RD2E";
+    .port_info 30 /OUTPUT 32 "PCE";
+    .port_info 31 /OUTPUT 5 "Rs1E";
+    .port_info 32 /OUTPUT 5 "Rs2E";
+    .port_info 33 /OUTPUT 5 "RdE";
+    .port_info 34 /OUTPUT 32 "ImmExtE";
+    .port_info 35 /OUTPUT 32 "PCPlus4E";
+o00000202a73e6f68 .functor BUFZ 4, C4<zzzz>; HiZ drive
+v00000202a73a33e0_0 .net "ALUControlD", 3 0, o00000202a73e6f68;  0 drivers
+v00000202a73a2fe0_0 .var "ALUControlE", 3 0;
+o00000202a73e6fc8 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a73a3080_0 .net "ALUSrcASelD", 0 0, o00000202a73e6fc8;  0 drivers
+v00000202a73a3120_0 .var "ALUSrcASelE", 0 0;
+o00000202a73e7028 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a73d3e50_0 .net "ALUSrcD", 0 0, o00000202a73e7028;  0 drivers
+v00000202a73d3ef0_0 .var "ALUSrcE", 0 0;
+o00000202a73e7088 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a73d3f90_0 .net "BranchD", 0 0, o00000202a73e7088;  0 drivers
+v00000202a73d4030_0 .var "BranchE", 0 0;
+o00000202a73e70e8 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a73d40d0_0 .net "FlushE", 0 0, o00000202a73e70e8;  0 drivers
+o00000202a73e7118 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v00000202a73d4170_0 .net "ImmExtD", 31 0, o00000202a73e7118;  0 drivers
+v00000202a73d4210_0 .var "ImmExtE", 31 0;
+o00000202a73e7178 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a73d42b0_0 .net "JumpD", 0 0, o00000202a73e7178;  0 drivers
+v00000202a73d4350_0 .var "JumpE", 0 0;
+o00000202a73e71d8 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a73d43f0_0 .net "MemWriteD", 0 0, o00000202a73e71d8;  0 drivers
+v00000202a73d4490_0 .var "MemWriteE", 0 0;
+o00000202a73e7238 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v00000202a73d4530_0 .net "PCD", 31 0, o00000202a73e7238;  0 drivers
+v00000202a74327f0_0 .var "PCE", 31 0;
+o00000202a73e7298 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v00000202a7432250_0 .net "PCPlus4D", 31 0, o00000202a73e7298;  0 drivers
+v00000202a7432070_0 .var "PCPlus4E", 31 0;
+o00000202a73e72f8 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v00000202a7432110_0 .net "RD1D", 31 0, o00000202a73e72f8;  0 drivers
+v00000202a7432570_0 .var "RD1E", 31 0;
+o00000202a73e7358 .functor BUFZ 32, C4<zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz>; HiZ drive
+v00000202a7432610_0 .net "RD2D", 31 0, o00000202a73e7358;  0 drivers
+v00000202a74322f0_0 .var "RD2E", 31 0;
+o00000202a73e73b8 .functor BUFZ 5, C4<zzzzz>; HiZ drive
+v00000202a7432890_0 .net "RdD", 4 0, o00000202a73e73b8;  0 drivers
+v00000202a7432430_0 .var "RdE", 4 0;
+o00000202a73e7418 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a74321b0_0 .net "RegWriteD", 0 0, o00000202a73e7418;  0 drivers
+v00000202a7432cf0_0 .var "RegWriteE", 0 0;
+o00000202a73e7478 .functor BUFZ 2, C4<zz>; HiZ drive
+v00000202a74329d0_0 .net "ResultSrcD", 1 0, o00000202a73e7478;  0 drivers
+v00000202a7432b10_0 .var "ResultSrcE", 1 0;
+o00000202a73e74d8 .functor BUFZ 5, C4<zzzzz>; HiZ drive
+v00000202a74324d0_0 .net "Rs1D", 4 0, o00000202a73e74d8;  0 drivers
+v00000202a7432390_0 .var "Rs1E", 4 0;
+o00000202a73e7538 .functor BUFZ 5, C4<zzzzz>; HiZ drive
+v00000202a74326b0_0 .net "Rs2D", 4 0, o00000202a73e7538;  0 drivers
+v00000202a7432ed0_0 .var "Rs2E", 4 0;
+o00000202a73e7598 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a7432c50_0 .net "clk", 0 0, o00000202a73e7598;  0 drivers
+o00000202a73e75c8 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a7432e30_0 .net "rst_n", 0 0, o00000202a73e75c8;  0 drivers
+o00000202a73e75f8 .functor BUFZ 1, C4<z>; HiZ drive
+v00000202a7432750_0 .net "stallE", 0 0, o00000202a73e75f8;  0 drivers
+E_00000202a7389520 .event posedge, v00000202a7432c50_0;
+    .scope S_00000202a73a2d20;
+T_0 ;
+    %wait E_00000202a7389520;
+    %load/vec4 v00000202a7432e30_0;
+    %nor/r;
+    %flag_set/vec4 8;
+    %jmp/0xz  T_0.0, 8;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a7432cf0_0, 0;
+    %pushi/vec4 0, 0, 2;
+    %assign/vec4 v00000202a7432b10_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d4490_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d4350_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d4030_0, 0;
+    %pushi/vec4 0, 0, 4;
+    %assign/vec4 v00000202a73a2fe0_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d3ef0_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73a3120_0, 0;
+    %pushi/vec4 0, 0, 32;
+    %assign/vec4 v00000202a7432570_0, 0;
+    %pushi/vec4 0, 0, 32;
+    %assign/vec4 v00000202a74322f0_0, 0;
+    %pushi/vec4 0, 0, 32;
+    %assign/vec4 v00000202a74327f0_0, 0;
+    %pushi/vec4 0, 0, 5;
+    %assign/vec4 v00000202a7432390_0, 0;
+    %pushi/vec4 0, 0, 5;
+    %assign/vec4 v00000202a7432ed0_0, 0;
+    %pushi/vec4 0, 0, 5;
+    %assign/vec4 v00000202a7432430_0, 0;
+    %pushi/vec4 0, 0, 32;
+    %assign/vec4 v00000202a73d4210_0, 0;
+    %pushi/vec4 0, 0, 32;
+    %assign/vec4 v00000202a7432070_0, 0;
+    %jmp T_0.1;
+T_0.0 ;
+    %load/vec4 v00000202a7432750_0;
+    %flag_set/vec4 8;
+    %jmp/0xz  T_0.2, 8;
+    %load/vec4 v00000202a7432cf0_0;
+    %assign/vec4 v00000202a7432cf0_0, 0;
+    %load/vec4 v00000202a7432b10_0;
+    %assign/vec4 v00000202a7432b10_0, 0;
+    %load/vec4 v00000202a73d4490_0;
+    %assign/vec4 v00000202a73d4490_0, 0;
+    %load/vec4 v00000202a73d4350_0;
+    %assign/vec4 v00000202a73d4350_0, 0;
+    %load/vec4 v00000202a73d4030_0;
+    %assign/vec4 v00000202a73d4030_0, 0;
+    %load/vec4 v00000202a73a2fe0_0;
+    %assign/vec4 v00000202a73a2fe0_0, 0;
+    %load/vec4 v00000202a73d3ef0_0;
+    %assign/vec4 v00000202a73d3ef0_0, 0;
+    %load/vec4 v00000202a73a3120_0;
+    %assign/vec4 v00000202a73a3120_0, 0;
+    %load/vec4 v00000202a7432570_0;
+    %assign/vec4 v00000202a7432570_0, 0;
+    %load/vec4 v00000202a74322f0_0;
+    %assign/vec4 v00000202a74322f0_0, 0;
+    %load/vec4 v00000202a74327f0_0;
+    %assign/vec4 v00000202a74327f0_0, 0;
+    %load/vec4 v00000202a7432390_0;
+    %assign/vec4 v00000202a7432390_0, 0;
+    %load/vec4 v00000202a7432ed0_0;
+    %assign/vec4 v00000202a7432ed0_0, 0;
+    %load/vec4 v00000202a7432430_0;
+    %assign/vec4 v00000202a7432430_0, 0;
+    %load/vec4 v00000202a73d4210_0;
+    %assign/vec4 v00000202a73d4210_0, 0;
+    %load/vec4 v00000202a7432070_0;
+    %assign/vec4 v00000202a7432070_0, 0;
+    %jmp T_0.3;
+T_0.2 ;
+    %load/vec4 v00000202a73d40d0_0;
+    %flag_set/vec4 8;
+    %jmp/0xz  T_0.4, 8;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a7432cf0_0, 0;
+    %pushi/vec4 0, 0, 2;
+    %assign/vec4 v00000202a7432b10_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d4490_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d4350_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d4030_0, 0;
+    %pushi/vec4 0, 0, 4;
+    %assign/vec4 v00000202a73a2fe0_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73d3ef0_0, 0;
+    %pushi/vec4 0, 0, 1;
+    %assign/vec4 v00000202a73a3120_0, 0;
+    %load/vec4 v00000202a7432570_0;
+    %assign/vec4 v00000202a7432570_0, 0;
+    %load/vec4 v00000202a74322f0_0;
+    %assign/vec4 v00000202a74322f0_0, 0;
+    %load/vec4 v00000202a74327f0_0;
+    %assign/vec4 v00000202a74327f0_0, 0;
+    %load/vec4 v00000202a7432390_0;
+    %assign/vec4 v00000202a7432390_0, 0;
+    %load/vec4 v00000202a7432ed0_0;
+    %assign/vec4 v00000202a7432ed0_0, 0;
+    %load/vec4 v00000202a7432430_0;
+    %assign/vec4 v00000202a7432430_0, 0;
+    %load/vec4 v00000202a73d4210_0;
+    %assign/vec4 v00000202a73d4210_0, 0;
+    %load/vec4 v00000202a7432070_0;
+    %assign/vec4 v00000202a7432070_0, 0;
+    %jmp T_0.5;
+T_0.4 ;
+    %load/vec4 v00000202a7432110_0;
+    %assign/vec4 v00000202a7432570_0, 0;
+    %load/vec4 v00000202a7432610_0;
+    %assign/vec4 v00000202a74322f0_0, 0;
+    %load/vec4 v00000202a73d4530_0;
+    %assign/vec4 v00000202a74327f0_0, 0;
+    %load/vec4 v00000202a74324d0_0;
+    %assign/vec4 v00000202a7432390_0, 0;
+    %load/vec4 v00000202a74326b0_0;
+    %assign/vec4 v00000202a7432ed0_0, 0;
+    %load/vec4 v00000202a7432890_0;
+    %assign/vec4 v00000202a7432430_0, 0;
+    %load/vec4 v00000202a73d4170_0;
+    %assign/vec4 v00000202a73d4210_0, 0;
+    %load/vec4 v00000202a7432250_0;
+    %assign/vec4 v00000202a7432070_0, 0;
+    %load/vec4 v00000202a74321b0_0;
+    %assign/vec4 v00000202a7432cf0_0, 0;
+    %load/vec4 v00000202a74329d0_0;
+    %assign/vec4 v00000202a7432b10_0, 0;
+    %load/vec4 v00000202a73d43f0_0;
+    %assign/vec4 v00000202a73d4490_0, 0;
+    %load/vec4 v00000202a73d42b0_0;
+    %assign/vec4 v00000202a73d4350_0, 0;
+    %load/vec4 v00000202a73d3f90_0;
+    %assign/vec4 v00000202a73d4030_0, 0;
+    %load/vec4 v00000202a73a33e0_0;
+    %assign/vec4 v00000202a73a2fe0_0, 0;
+    %load/vec4 v00000202a73d3e50_0;
+    %assign/vec4 v00000202a73d3ef0_0, 0;
+    %load/vec4 v00000202a73a3080_0;
+    %assign/vec4 v00000202a73a3120_0, 0;
+T_0.5 ;
+T_0.3 ;
+T_0.1 ;
+    %jmp T_0;
+    .thread T_0;
+# The file index is used to find the file name in the following table.
+:file_names 3;
+    "N/A";
+    "<interactive>";
+    "c:\Users\chits\OneDrive\Documents\GitHub\FPGA_RISC_V_PP\riscv_ip\ID_EX.v";
