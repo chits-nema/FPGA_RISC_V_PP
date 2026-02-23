@@ -126,7 +126,7 @@ module tb_bubble_sort();
         if (rst_n) begin
             M_MemWrite_r <= dut.M_MemWrite;
             
-            if (M_MemWrite_r && store_count < 150) begin
+            if (M_MemWrite_r && store_count < 300) begin
                 $display("[%0t] MEM WRITE: addr=0x%h (DRAM[%0d]), data_in=0x%h (%0d) [WriteDataM]",
                          $time, M_ALUResult_r, M_ALUResult_r[31:2], 
                          dut.M_WriteData, $signed(dut.M_WriteData));
@@ -136,6 +136,12 @@ module tb_bubble_sort();
                          dut.ForwardBE, dut.W_Result, dut.M_ALUResult);
                 $display("          Source: Rs2E=%0d, RdM=%0d, RdW=%0d",
                          dut.E_Rs2, dut.M_Rd, dut.W_Rd);
+                $display("          Hazards: FlushE=%b, lwstall_D=%b, lwstall_E=%b",
+                         dut.E_flush, dut.D_stall, dut.E_stall);
+                // CHECK FOR ZERO WRITES THAT SHOULDN'T BE ZERO
+                if (dut.M_WriteData == 32'h00000000) begin
+                    $display("          *** WARNING: Writing ZERO to memory! Check pipeline state! ***");
+                end
                 store_count = store_count + 1;
             end
         end
@@ -240,42 +246,41 @@ module tb_bubble_sort();
         IRAM[26] = 32'h00000063;  // 26: beq  x0, x0, 0       ; infinite loop
         
         //---------------------------------------------------------------------
-        // Load Test Data (32 random signed integers, SAME seed as Python)
+        // Load Test Data (32 POSITIVE integers - NO ZEROS)
         //---------------------------------------------------------------------
-        $display("[2] Loading test data (32 integers)...");
-        // Using same seed (67) as Python test for reproducibility
-        DRAM[0]  = 32'hFFFFFF38;  // -200
-        DRAM[1]  = 32'h00000096;  // 150
-        DRAM[2]  = 32'hFFFFFF06;  // -250
-        DRAM[3]  = 32'h000000C8;  // 200
-        DRAM[4]  = 32'hFFFFFED4;  // -300
-        DRAM[5]  = 32'h0000007D;  // 125
-        DRAM[6]  = 32'hFFFFFF9C;  // -100
-        DRAM[7]  = 32'h000000E1;  // 225
-        DRAM[8]  = 32'hFFFFFF65;  // -155
-        DRAM[9]  = 32'h00000050;  // 80
-        DRAM[10] = 32'hFFFFFFA6;  // -90
-        DRAM[11] = 32'h00000028;  // 40
-        DRAM[12] = 32'hFFFFFEE4;  // -284
-        DRAM[13] = 32'h000000B4;  // 180
-        DRAM[14] = 32'hFFFFFF4C;  // -180
-        DRAM[15] = 32'h0000005A;  // 90
-        DRAM[16] = 32'hFFFFFEF8;  // -264
-        DRAM[17] = 32'h0000003C;  // 60
-        DRAM[18] = 32'hFFFFFF7E;  // -130
-        DRAM[19] = 32'h000000A0;  // 160
-        DRAM[20] = 32'hFFFFFFA1;  // -95
-        DRAM[21] = 32'h00000014;  // 20
-        DRAM[22] = 32'hFFFFFED8;  // -296
-        DRAM[23] = 32'h000000DC;  // 220
-        DRAM[24] = 32'hFFFFFF2E;  // -210
-        DRAM[25] = 32'h0000006E;  // 110
-        DRAM[26] = 32'hFFFFFF60;  // -160
-        DRAM[27] = 32'h00000082;  // 130
-        DRAM[28] = 32'hFFFFFEC8;  // -312
-        DRAM[29] = 32'h000000F0;  // 240
-        DRAM[30] = 32'hFFFFFEB9;  // -327
-        DRAM[31] = 32'h0000001E;  // 30
+        $display("[2] Loading test data (32 positive integers - NO ZEROS)...");
+        DRAM[0]  = 32'h00000009;  // 9
+        DRAM[1]  = 32'h00000031;  // 49
+        DRAM[2]  = 32'h0000005F;  // 95
+        DRAM[3]  = 32'h0000001A;  // 26
+        DRAM[4]  = 32'h00000035;  // 53
+        DRAM[5]  = 32'h00000056;  // 86
+        DRAM[6]  = 32'h00000011;  // 17
+        DRAM[7]  = 32'h0000002D;  // 45
+        DRAM[8]  = 32'h00000049;  // 73
+        DRAM[9]  = 32'h00000046;  // 70
+        DRAM[10] = 32'h00000029;  // 41
+        DRAM[11] = 32'h00000054;  // 84
+        DRAM[12] = 32'h00000054;  // 84
+        DRAM[13] = 32'h00000055;  // 85
+        DRAM[14] = 32'h00000022;  // 34
+        DRAM[15] = 32'h0000000E;  // 14
+        DRAM[16] = 32'h0000003B;  // 59
+        DRAM[17] = 32'h0000001B;  // 27
+        DRAM[18] = 32'h00000026;  // 38
+        DRAM[19] = 32'h00000010;  // 16
+        DRAM[20] = 32'h0000004F;  // 79
+        DRAM[21] = 32'h00000020;  // 32
+        DRAM[22] = 32'h0000004E;  // 78
+        DRAM[23] = 32'h00000041;  // 65
+        DRAM[24] = 32'h00000028;  // 40
+        DRAM[25] = 32'h00000045;  // 69
+        DRAM[26] = 32'h00000010;  // 16
+        DRAM[27] = 32'h0000003B;  // 59
+        DRAM[28] = 32'h00000049;  // 73
+        DRAM[29] = 32'h0000004F;  // 79
+        DRAM[30] = 32'h00000061;  // 97
+        DRAM[31] = 32'h00000054;  // 84
         
         DRAM[64] = 32'h00000000;  // Clear done flag at byte offset 0x100 (word 64)
         

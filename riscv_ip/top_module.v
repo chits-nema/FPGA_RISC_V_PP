@@ -31,6 +31,7 @@ reg branch_flush_r;
 //-----------------------------------------------------DECODE------------------------------------
 wire [31:0] D_instr;
 wire D_stall, D_flush;
+wire M_flush;  // Flush M stage (insert bubble when E stalls)
 wire [31:0] D_pc;
 wire [4:0] D_Rs1; //19:15
 wire [4:0] D_Rs2; //24:20
@@ -250,7 +251,7 @@ decode_execute_reg PLR2(
     .clk(clk),
     .rst_n(rst_n),
     .FlushE(E_flush),
-    .stallE(D_stall),          // Hold E when D is stalled
+    .stallE(E_stall),          // Use E_stall from hazard unit (independent from D_stall)
     // Control signals
     .RegWriteD(D_RegWrite),
     .ResultSrcD(D_ResultSrc),
@@ -349,7 +350,7 @@ adder pc_target_add(
 execute_memory_reg PLR3(
     .clk(clk),
     .rst_n(rst_n),
-    .flush(1'b0),  // Not used for control hazards (branches/jumps) - only for exceptions
+    .flush(M_flush),  // Flush M when E was flushed previous cycle
     // Control signals
     .RegWriteE(E_RegWrite),
     .ResultSrcE(E_ResultSrc),
@@ -384,6 +385,7 @@ execute_memory_reg PLR3(
 memory_writeback_reg PLR4(
     .clk(clk),
     .rst_n(rst_n),
+    .flush(1'b0),              // No active flush needed - bubbles propagate naturally from M
     // Control signals
     .RegWriteM(M_RegWrite),
     .ResultSrcM(M_ResultSrc),
@@ -436,6 +438,7 @@ hazard hazard_unit(
     .stallM(M_stall),
     .FlushD(D_flush),
     .FlushE(E_flush),
+    .FlushM(M_flush),
     .ForwardAE(ForwardAE),
     .ForwardBE(ForwardBE),
     .clk(clk),

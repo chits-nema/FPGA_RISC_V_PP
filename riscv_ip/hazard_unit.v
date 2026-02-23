@@ -36,7 +36,8 @@ module hazard(
 
     // Flush control outputs
     output reg FlushD,           // Flush Decode
-    output reg FlushE            // Flush Execute
+    output reg FlushE,           // Flush Execute
+    output reg FlushM            // Flush Memory (insert bubble when E stalls)
 );
 
     // Internal hazard detection signals
@@ -96,13 +97,25 @@ module hazard(
     // STALL AND FLUSH CONTROL
     //=====================================================================================
     
+    // Register to delay FlushE by one cycle to create FlushM
+    reg FlushE_delayed;
+    
+    always @(posedge clk or negedge reset) begin
+        if (!reset)
+            FlushE_delayed <= 1'b0;
+        else
+            FlushE_delayed <= FlushE;
+    end
+    
     always @(*) begin
-        // Default: no stalls
+        // Default: no stalls or flushes
         stallF = 1'b0;
         stallD = 1'b0;
         stallE = 1'b0;
         stallM = 1'b0;
-        
+        FlushD = 1'b0;
+        FlushE = 1'b0;
+        FlushM = FlushE_delayed;  // Flush M when E was flushed last cycle        
         // Stall for load-use hazard with dependent in D (load in E or M, dependent in D)
         if (lwstall_D) begin
             stallF = 1'b1;  // Hold fetch
@@ -111,18 +124,21 @@ module hazard(
             // Load proceeds E→M→W normally while dependent instruction waits in D
         end
         
-        // Additional stall for load-use hazard with dependent in E (load in M, dependent in E)
-        // Need to hold E stage as well until load reaches W
+        // Additional bubble insertion for load in M with dependent in E
+        // This handles: lw (M), dependent instruction (E) - insert NOP, let load reach W
+        // This is INDEPENDENT of lwstall_D - both can be true simultaneously!
         if (lwstall_E) begin
-            stallF = 1'b1;  // Hold fetch
-            stallD = 1'b1;  // Hold decode
-            stallE = 1'b1;  // CRITICAL: Also hold E stage!
-            // Everything below load stalls, load in M proceeds to W, then E can use forwarded data
+            stallF = 1'b1;   // Hold fetch
+            stallD = 1'b1;   // Hold decode
+            FlushE = 1'b1;   // Insert bubble in E stage
+            // Load in M proceeds to W, dependent instruction stays in D
         end
         
-        // Flush control
-        FlushE = PcSrcE;  // Flush E only on branch taken (NOT on load-use stall!)
-        FlushD = PcSrcE;  // Flush D on branch taken
+        // Branch/Jump flush control (takes priority over stalls)
+        if (PcSrcE) begin
+            FlushE = 1'b1;  // Flush E on branch taken
+            FlushD = 1'b1;  // Flush D on branch taken  
+        end
     end
 
 endmodule

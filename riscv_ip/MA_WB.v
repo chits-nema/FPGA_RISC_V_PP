@@ -1,6 +1,7 @@
 module memory_writeback_reg(
     input clk,
     input rst_n,            // Active-low reset
+    input flush,            // Flush signal (clear control signals for bubbles)
     
     // Control signals from Memory
     input RegWriteM,
@@ -26,6 +27,16 @@ module memory_writeback_reg(
     always @(posedge clk) begin
         if (!rst_n) begin
             // Reset: clear control signals
+            RegWriteW <= 1'b0;
+            ResultSrcW <= 2'b00;
+            
+            ALUResultW <= 32'b0;
+            ReadDataW <= 32'b0;
+            RdW <= 5'b0;
+            PCPlus4W <= 32'b0;
+        end
+        else if (flush) begin
+            // Flush: clear everything just like reset (insert full NOP/bubble)
             RegWriteW <= 1'b0;
             ResultSrcW <= 2'b00;
             

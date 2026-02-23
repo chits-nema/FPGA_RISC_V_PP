@@ -39,15 +39,17 @@ module execute_memory_reg(
             PCPlus4M <= 32'b0;
         end
         else if (flush) begin
-            // Flush: clear control signals only
+            // Flush: ONLY clear control signals to insert NOP
+            // CRITICAL: Do NOT clear data! Clearing WriteData to 0 could cause
+            // accidental zero writes if MemWrite isn't properly cleared first
             RegWriteM <= 1'b0;
             ResultSrcM <= 2'b00;
             MemWriteM <= 1'b0;
-            
-            ALUResultM <= 32'b0;
-            WriteDataM <= 32'b0;
-            RdM <= 5'b0;
-            PCPlus4M <= 32'b0;
+            // Data passes through unchanged (don't care since MemWrite=0, RegWrite=0)
+            ALUResultM <= ALUResultE;
+            WriteDataM <= WriteDataE;
+            RdM <= RdE;
+            PCPlus4M <= PCPlus4E;
         end
         else begin
             // Normal operation: pass values through

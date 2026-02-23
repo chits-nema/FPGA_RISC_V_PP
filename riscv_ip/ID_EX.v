@@ -66,8 +66,32 @@ always @(posedge clk) begin
             ImmExtE <= 32'b0;
             PCPlus4E <= 32'b0;
         end
+        else if (stallE) begin
+            // Stall: hold all current values (don't update from D stage)
+            // All outputs keep their current values
+            RegWriteE <= RegWriteE;
+            ResultSrcE <= ResultSrcE;
+            MemWriteE <= MemWriteE;
+            JumpE <= JumpE;
+            BranchE <= BranchE;
+            ALUControlE <= ALUControlE;
+            ALUSrcE <= ALUSrcE;
+            ALUSrcASelE <= ALUSrcASelE;
+            
+            RD1E <= RD1E;
+            RD2E <= RD2E;
+            PCE <= PCE;
+            Rs1E <= Rs1E;
+            Rs2E <= Rs2E;
+            RdE <= RdE;
+            ImmExtE <= ImmExtE;
+            PCPlus4E <= PCPlus4E;
+        end
         else if (FlushE) begin
-            // Flush: only clear control signals (data is don't-care)
+            // Flush: ONLY clear control signals to insert NOP
+            // CRITICAL: Keep E's CURRENT data values, don't update from D!
+            // When FlushE and stallD happen together (lwstall_E), D may have stale/zero data
+            // Latching from D would propagate those zeros to E, then to WriteDataM
             RegWriteE <= 1'b0;
             ResultSrcE <= 2'b00;
             MemWriteE <= 1'b0;
@@ -76,7 +100,18 @@ always @(posedge clk) begin
             ALUControlE <= 4'b0000;
             ALUSrcE <= 1'b0;
             ALUSrcASelE <= 1'b0;
-            // Don't clear data path - keeps PCE valid for potential hazard checks
+            
+            // Keep current E values unchanged (don't update from D stage)
+            // Data doesn't matter since all control signals are 0, but keeping
+            // current data prevents zeros from D stage entering the pipeline
+            RD1E <= RD1E;
+            RD2E <= RD2E;
+            PCE <= PCE;
+            Rs1E <= Rs1E;
+            Rs2E <= Rs2E;
+            RdE <= RdE;
+            ImmExtE <= ImmExtE;
+            PCPlus4E <= PCPlus4E;
         end
         else begin
             // Normal operation: latch new values from decode stage
