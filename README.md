@@ -84,3 +84,199 @@ The PS uses the **PYNQ Overlay framework** to:
 5. Poll the status register at `0x2000` every second for a completion flag (`0xDEADBEEF`)
 6. Read back results and verify against a software-generated reference
 
+---
+
+## Project Structure
+
+```
+FPGA_RISC_V_PP/
+├── README.md                           # Project documentation
+├── fgpa_outputs/                       # Generated bitstream files
+│   ├── design_1_wrapper.bit           # FPGA bitstream
+│   └── design_1_wrapper.hwh           # Hardware handoff file
+├── Hardware Design/                    # Verilog source files
+│   └── riscv_ip/                      # RISC-V core modules
+│       ├── top_module.v               # Top-level RISC-V core
+│       ├── rv_pl_wrapper.v            # AXI wrapper for Zynq integration
+│       ├── program_counter.v          # PC logic and branch control
+│       ├── controller.v               # Main control unit
+│       ├── main_decoder.v             # Instruction decoder
+│       ├── ALU_Decoder.v              # ALU operation decoder
+│       ├── alu.v                      # Arithmetic Logic Unit
+│       ├── reg_file.v                 # 32-entry register file
+│       ├── extend_unit.v              # Immediate extension logic
+│       ├── hazard_unit.v              # Data hazard detection & forwarding
+│       ├── IF_ID.v                    # Fetch-Decode pipeline register
+│       ├── ID_EX.v                    # Decode-Execute pipeline register
+│       ├── EX_MA.v                    # Execute-Memory pipeline register
+│       ├── MA_WB.v                    # Memory-Writeback pipeline register
+│       ├── multiplexer.v              # Various multiplexer modules
+│       ├── generic_building_blocks.v  # Utility components
+│       ├── component.xml              # Vivado IP packaging metadata
+│       ├── block design/              # Vivado block design files
+│       └── xgui/                      # Vivado GUI configuration
+├── testing_programs/                  # Test programs
+│   ├── test_sort.s                    # RISC-V assembly bubble sort
+│   └── tb_bubble_sort.v               # Verilog testbench
+└── verification_script/               # Verification notebooks
+    └── riscv_sort_verification.ipynb  # Jupyter notebook for testing
+```
+
+---
+
+## Features
+
+- **Full RV32I Base Instruction Set** — All integer instructions (load, store, arithmetic, logic, branch, jump)
+- **5-Stage Classic Pipeline** — IF, ID, EX, MEM, WB with inter-stage registers
+- **Data Hazard Handling** — Forwarding paths and pipeline stalls to resolve RAW hazards
+- **Harvard Architecture** — Separate instruction and data memories eliminate port conflicts
+- **AXI4-Lite Integration** — Seamless PS-PL communication via standard AXI protocol
+- **Software-Controlled Execution** — Python scripts load programs and monitor execution status
+- **Bubble Sort Benchmark** — 32-element integer array sorting with 2,980 instructions
+- **PYNQ Framework Support** — Ready to deploy on Zynq-based PYNQ boards
+
+---
+
+## Prerequisites
+
+### Hardware
+- **FPGA Board:** Zynq-7000 series (e.g., PYNQ-Z1, PYNQ-Z2)
+- **Host Computer:** Windows/Linux machine with USB connectivity
+
+### Software
+- **Vivado Design Suite** (2020.1 or later) — for synthesis and bitstream generation
+- **PYNQ Image** (v2.7 or later) — installed on the target board's SD card
+- **Python 3.6+** with the following packages:
+  - `pynq` — FPGA overlay management
+  - `jupyter` — interactive notebook interface
+  - `numpy` — numerical operations
+
+---
+
+## Getting Started
+
+### 1. Hardware Setup
+
+1. Flash the PYNQ image onto an SD card and boot the PYNQ board
+2. Connect the board to your network via Ethernet or configure Wi-Fi
+3. Access the Jupyter Notebook interface at `http://pynq:9090` (default password: `xilinx`)
+
+### 2. Loading the Bitstream
+
+Copy the bitstream files to your PYNQ board:
+
+```bash
+scp fgpa_outputs/design_1_wrapper.bit xilinx@pynq:/home/xilinx/
+scp fgpa_outputs/design_1_wrapper.hwh xilinx@pynq:/home/xilinx/
+```
+
+### 3. Running the Verification Script
+
+1. Upload `verification_script/riscv_sort_verification.ipynb` to the PYNQ Jupyter interface
+2. Open the notebook and run all cells sequentially
+3. The notebook will:
+   - Load the FPGA overlay
+   - Compile the assembly program to machine code
+   - Write instructions and test data to BRAM
+   - Execute the RISC-V core
+   - Compare results with a reference Python implementation
+
+---
+
+## Usage
+
+### Running the Bubble Sort Test
+
+The included test program (`test_sort.s`) sorts a 32-element array:
+
+1. **Assembly Code:** A fully-unrolled bubble sort with 496 compare-swap blocks
+2. **Execution:** Runs directly on the RISC-V core in FPGA fabric
+3. **Verification:** Results are read back and compared against expected values
+4. **Completion Signal:** Writes `0xDEADBEEF` to address `0x100` when finished
+
+### Writing Custom Programs
+
+To run your own RISC-V programs:
+
+1. Write RV32I assembly code targeting the instruction set
+2. Assemble using a RISC-V toolchain (e.g., `riscv32-unknown-elf-as`)
+3. Extract machine code and load into instruction BRAM via the Python script
+4. Use data BRAM addresses `0x000–0x0FF` for variables
+5. Trigger execution by releasing the reset signal via AXI GPIO
+
+---
+
+## Testing
+
+### Testbench Simulation
+
+A Verilog testbench is provided for functional verification:
+
+```bash
+cd "Hardware Design/riscv_ip"
+iverilog -o sim tb_bubble_sort.v top_module.v alu.v controller.v # ... (add all modules)
+vvp sim
+```
+
+The testbench loads the bubble sort program and verifies correct operation through waveform inspection.
+
+### On-Board Verification
+
+The Jupyter notebook provides automated verification:
+- Generates random test data
+- Executes on both FPGA and Python
+- Compares results element-by-element
+- Reports pass/fail status with diagnostic outputs
+
+---
+
+## Performance
+
+| Metric | Value |
+|---|---|
+| **Clock Frequency** | 100 MHz (FCLK_CLK0) |
+| **CPI (Bubble Sort)** | ~1.2 (with hazards and stalls) |
+| **Execution Time (32 elements)** | ~35–40 µs |
+| **Memory Bandwidth** | 400 MB/s (32-bit @ 100 MHz) |
+
+---
+
+## Known Limitations
+
+- **No Cache:** Direct BRAM access only; performance depends on single-cycle memory
+- **No Interrupts:** Polling-based completion detection
+- **Limited Instruction Memory:** 4 KB instruction BRAM
+- **Limited Data Memory:** 2 KB data BRAM
+- **No Multiply/Divide:** RV32I base only (no M-extension)
+
+---
+
+## Future Enhancements
+
+- [ ] Add RV32M extension (multiply/divide instructions)
+- [ ] Implement branch prediction to reduce control hazards
+- [ ] Add performance counters (cycle count, stalls, flushes)
+- [ ] Support for compressed instructions (RV32IC)
+- [ ] Integration with FreeRTOS or bare-metal C programs
+- [ ] Expand memory via external DRAM controller
+
+---
+
+## References
+
+- [RISC-V ISA Specification](https://riscv.org/technical/specifications/)
+- [PYNQ Framework Documentation](http://www.pynq.io/)
+- [AXI Protocol Specification](https://developer.arm.com/documentation/ihi0022/e/)
+
+---
+
+## License
+
+This project is developed as part of academic coursework at TU Munich. Please contact the authors for usage permissions.
+
+---
+
+## Acknowledgments
+
+Special thanks to the Chair of Computer Architecture and Operating Systems at TU Munich for project guidance and resources.
+
